@@ -1,0 +1,11 @@
+Your learning journal for this assignment in English (if any).
+
+Please submit a brief journal about your experience with this assignment.  
+Include your reflections in a file named `journal.txt` and submit it with your code.
+
+- What are the key lessons or skills you learned from this assignment?
+- What specific tasks did you complete? 
+- What difficulties did you encounter? How did you solve them?
+
+This journal is required but not graded. 
+

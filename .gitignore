@@ -1,0 +1,43 @@
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# CUDA build artifacts
+*.o
+*.out
+*.exe
+
+# Logs and profiling
+*.log
+*.prof
+
+# Data files (keep structure, ignore large data)
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.ckpt
