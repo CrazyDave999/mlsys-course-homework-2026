@@ -1,11 +1,14 @@
-Your learning journal for this assignment in English (if any).
+In this assignment I learned how a small automatic differentiation engine is built from a computational graph.
+The key ideas I practiced were defining node-level forward computation, composing a graph evaluator with topological order,
+and constructing reverse-mode autodiff by propagating gradients backward through the graph.
 
-Please submit a brief journal about your experience with this assignment.  
-Include your reflections in a file named `journal.txt` and submit it with your code.
+I completed the implementation of the missing parts in `auto_diff.py`, including:
+- forward `compute` methods for element-wise multiplication, division, scalar variants, and matrix multiplication
+- local `gradient` methods for the same operators
+- the `Evaluator.run` method for graph execution
+- the `gradients` function for backward graph construction
 
-- What are the key lessons or skills you learned from this assignment?
-- What specific tasks did you complete? 
-- What difficulties did you encounter? How did you solve them?
-
-This journal is required but not graded. 
+The main difficulty was handling matrix multiplication gradients correctly when transpose flags were enabled.
+I solved this by reasoning through the four transpose combinations separately and then validating the formulas with numerical checks
+and the provided expected outputs.
 

@@ -1,11 +1,9 @@
-Your feedback for this assignment in English (if any).
-Possible choices can be:
+I think this assignment is a good introduction to computational graphs and reverse-mode automatic differentiation.
+The overall difficulty is moderate: the element-wise operators are straightforward, while matrix multiplication gradients
+with transpose flags are the most time-consuming and error-prone part.
 
-- How difficult do you think this assignment is?
-- How much time does the assignment take? Which task takes the most time?
-- Which part of the assignment do you feel hard to understand?
-- And any other things you would like to share.
+The notebook explanation is clear overall. One place that could use a bit more detail is the backward rule for `matmul`
+under different transpose combinations, because that is where most implementation mistakes are likely to happen.
 
-Your feedback will be very useful in helping us improve the assignment quality
-for next years.
+I also like that the assignment naturally supports checking higher-order gradients once the graph construction is correct.
 

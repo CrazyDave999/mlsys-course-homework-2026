@@ -204,11 +204,13 @@ class MulOp(Op):
 
     def compute(self, node: Node, input_values: List[np.ndarray]) -> np.ndarray:
         """Return the element-wise multiplication of input values."""
-        """TODO: Your code here"""
+        assert len(input_values) == 2
+        return input_values[0] * input_values[1]
 
     def gradient(self, node: Node, output_grad: Node) -> List[Node]:
         """Given gradient of multiplication node, return partial adjoint to each input."""
-        """TODO: Your code here"""
+        lhs, rhs = node.inputs
+        return [output_grad * rhs, output_grad * lhs]
 
 
 class MulByConstOp(Op):
@@ -224,11 +226,12 @@ class MulByConstOp(Op):
 
     def compute(self, node: Node, input_values: List[np.ndarray]) -> np.ndarray:
         """Return the element-wise multiplication of the input value and the constant."""
-        """TODO: Your code here"""
+        assert len(input_values) == 1
+        return input_values[0] * node.constant
 
     def gradient(self, node: Node, output_grad: Node) -> List[Node]:
         """Given gradient of multiplication node, return partial adjoint to the input."""
-        """TODO: Your code here"""
+        return [output_grad * node.constant]
 
 
 class DivOp(Op):
@@ -243,11 +246,16 @@ class DivOp(Op):
 
     def compute(self, node: Node, input_values: List[np.ndarray]) -> np.ndarray:
         """Return the element-wise division of input values."""
-        """TODO: Your code here"""
+        assert len(input_values) == 2
+        return input_values[0] / input_values[1]
 
     def gradient(self, node: Node, output_grad: Node) -> List[Node]:
         """Given gradient of division node, return partial adjoint to each input."""
-        """TODO: Your code here"""
+        numerator, denominator = node.inputs
+        return [
+            output_grad / denominator,
+            output_grad * (-1) * numerator / denominator / denominator,
+        ]
 
 
 class DivByConstOp(Op):
@@ -263,11 +271,12 @@ class DivByConstOp(Op):
 
     def compute(self, node: Node, input_values: List[np.ndarray]) -> np.ndarray:
         """Return the element-wise division of the input value and the constant."""
-        """TODO: Your code here"""
+        assert len(input_values) == 1
+        return input_values[0] / node.constant
 
     def gradient(self, node: Node, output_grad: Node) -> List[Node]:
         """Given gradient of division node, return partial adjoint to the input."""
-        """TODO: Your code here"""
+        return [output_grad / node.constant]
 
 
 class MatMulOp(Op):
@@ -310,7 +319,13 @@ class MatMulOp(Op):
         That being said, the test cases guarantee that input values are
         always 2d numpy.ndarray.
         """
-        """TODO: Your code here"""
+        assert len(input_values) == 2
+        lhs, rhs = input_values
+        if node.trans_A:
+            lhs = lhs.T
+        if node.trans_B:
+            rhs = rhs.T
+        return lhs @ rhs
 
     def gradient(self, node: Node, output_grad: Node) -> List[Node]:
         """Given gradient of matmul node, return partial adjoint to each input.
@@ -323,7 +338,29 @@ class MatMulOp(Op):
         2d matrices, or multi-dim tensors.
         - You may want to look up some materials for the gradients of matmul.
         """
-        """TODO: Your code here"""
+        lhs, rhs = node.inputs
+        trans_A = node.trans_A
+        trans_B = node.trans_B
+
+        if not trans_A and not trans_B:
+            return [
+                matmul(output_grad, rhs, trans_B=True),
+                matmul(lhs, output_grad, trans_A=True),
+            ]
+        if trans_A and not trans_B:
+            return [
+                matmul(rhs, output_grad, trans_B=True),
+                matmul(lhs, output_grad),
+            ]
+        if not trans_A and trans_B:
+            return [
+                matmul(output_grad, rhs),
+                matmul(output_grad, lhs, trans_A=True),
+            ]
+        return [
+            matmul(rhs, output_grad, trans_A=True, trans_B=True),
+            matmul(output_grad, lhs, trans_A=True, trans_B=True),
+        ]
 
 
 class ZerosLikeOp(Op):
@@ -402,7 +439,19 @@ class Evaluator:
         eval_values: List[np.ndarray]
             The list of values for nodes in `eval_nodes` field.
         """
-        """TODO: Your code here"""
+        value_map: Dict[Node, np.ndarray] = {}
+
+        for node in find_topo_order(self.eval_nodes):
+            if node.op is placeholder:
+                if node not in input_values:
+                    raise ValueError(f"Missing value for input node {node}")
+                value_map[node] = input_values[node]
+                continue
+
+            input_vals = [value_map[input_node] for input_node in node.inputs]
+            value_map[node] = node.op.compute(node, input_vals)
+
+        return [value_map[node] for node in self.eval_nodes]
 
 
 def gradients(output_node: Node, nodes: List[Node]) -> List[Node]:
@@ -423,5 +472,51 @@ def gradients(output_node: Node, nodes: List[Node]) -> List[Node]:
     grad_nodes: List[Node]
         A list of gradient nodes, one for each input nodes respectively.
     """
+    topo_order = find_topo_order([output_node])
+    node_to_output_grads_list: Dict[Node, List[Node]] = {output_node: [ones_like(output_node)]}
+    node_to_total_grad: Dict[Node, Node] = {}
 
-    """TODO: Your code here"""
+    for node in reversed(topo_order):
+        grad_list = node_to_output_grads_list.get(node, [])
+        if not grad_list:
+            continue
+
+        total_grad = sum_node_list(grad_list)
+        node_to_total_grad[node] = total_grad
+
+        if node.op is placeholder:
+            continue
+
+        input_grads = node.op.gradient(node, total_grad)
+        for input_node, input_grad in zip(node.inputs, input_grads):
+            if input_node not in node_to_output_grads_list:
+                node_to_output_grads_list[input_node] = []
+            node_to_output_grads_list[input_node].append(input_grad)
+
+    return [node_to_total_grad.get(node, zeros_like(node)) for node in nodes]
+
+
+def find_topo_order(nodes: List[Node]) -> List[Node]:
+    visited = set()
+    topo_order: List[Node] = []
+
+    def dfs(node: Node) -> None:
+        if node in visited:
+            return
+        visited.add(node)
+        for input_node in node.inputs:
+            dfs(input_node)
+        topo_order.append(node)
+
+    for node in nodes:
+        dfs(node)
+
+    return topo_order
+
+
+def sum_node_list(nodes: List[Node]) -> Node:
+    assert len(nodes) > 0
+    result = nodes[0]
+    for node in nodes[1:]:
+        result = result + node
+    return result
