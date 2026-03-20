@@ -1,22 +1,38 @@
 #include <cuda_runtime.h>
 #include <cstdint>
 
-// ============================================================================
-// STUDENT IMPLEMENTATION AREA
-//
-// Your task is to implement one or more CUDA kernels in this file to compute
-// a 2D continuous cumulative sum. The `cumsum_host.cu` file provides a test
-// framework that will call your implementation.
-//
-// You have complete freedom in designing your kernel(s). You will also need to:
-// 1. Declare your kernel prototypes in `cumsum_host.cu` (e.g., using `extern "C"`)
-//    so that the host code can find them.
-// 2. Implement the logic to launch your designed kernel(s) inside the
-//    `launch_2d_cumsum_kernels` function in `cumsum_host.cu`.
-//
-// Hint: A high-performance approach is to use a multi-stage parallel scan
-// algorithm (e.g., a four-stage hierarchical scan) and leverage shared memory
-// for intra-block operations.
-// ============================================================================
+// Each warp (32 threads) processes one row independently.
+// Within each chunk of 32 elements, a warp-level inclusive scan is performed
+// using shuffle intrinsics, then the running total from previous chunks is added.
+extern "C" __global__ void cumsum_2d_kernel(
+    const int64_t* __restrict__ d_A,
+    int64_t* __restrict__ d_Out,
+    int64_t m,
+    int64_t n)
+{
+    int global_tid = blockIdx.x * blockDim.x + threadIdx.x;
+    int row = global_tid >> 5;
+    int lane = global_tid & 31;
 
-// TODO: Implement your CUDA kernel(s) here.
+    if (row >= m) return;
+
+    int64_t row_off = (int64_t)row * n;
+    int64_t running = 0;
+    int num_chunks = (int)((n + 31) >> 5);
+
+    for (int c = 0; c < num_chunks; c++) {
+        int64_t col = (int64_t)c * 32 + lane;
+        int64_t val = (col < n) ? d_A[row_off + col] : 0;
+
+        // Warp inclusive scan (Hillis-Steele)
+        #pragma unroll
+        for (int off = 1; off < 32; off <<= 1) {
+            int64_t t = __shfl_up_sync(0xFFFFFFFF, val, off);
+            if (lane >= off) val += t;
+        }
+
+        val += running;
+        if (col < n) d_Out[row_off + col] = val;
+        running = __shfl_sync(0xFFFFFFFF, val, 31);
+    }
+}

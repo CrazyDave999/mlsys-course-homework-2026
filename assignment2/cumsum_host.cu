@@ -22,11 +22,11 @@
 // Kernel Declarations (from cumsum.cu)
 // ============================================================================
 
-// TODO: Add the function prototypes for the CUDA kernels you implement in `cumsum.cu`.
-// The `extern "C"` keyword is necessary to ensure the C++ compiler can link them correctly.
-//
-// Example:
-// extern "C" __global__ void my_custom_kernel(...);
+extern "C" __global__ void cumsum_2d_kernel(
+    const int64_t* __restrict__ d_A,
+    int64_t* __restrict__ d_Out,
+    int64_t m,
+    int64_t n);
 
 
 // ============================================================================
@@ -96,10 +96,10 @@ bool verify_results(int64_t* gpu_out, int64_t* cpu_out, int64_t m, int64_t n) {
 void launch_2d_cumsum_kernels(int64_t* d_A, int64_t* d_Out, int64_t* d_Tmp,
                                int64_t m, int64_t n)
 {
-    // TODO: Implement the logic to launch your CUDA kernels here.
-    // 1. Define grid and block dimensions.
-    // 2. Launch the kernel(s) you implemented in cumsum.cu.
-    // 3. Synchronize if needed.
+    int block_size = 256;
+    int total_threads = (int)m * 32;
+    int grid_size = (total_threads + block_size - 1) / block_size;
+    cumsum_2d_kernel<<<grid_size, block_size>>>(d_A, d_Out, m, n);
 }
 
 // ============================================================================
