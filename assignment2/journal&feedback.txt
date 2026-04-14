@@ -1,5 +1,28 @@
 journal:
 
+This assignment provided valuable insights into CUDA programming and parallel computing. Implementing the 2D cumulative sum kernel helped me understand the intricacies of GPU parallelism and the importance of optimizing thread and memory usage. I also learned how to use warp-level primitives like __shfl_sync for efficient data sharing within threads.
+
+Tasks completed:
+- Implemented the 2D cumulative sum kernel in `cumsum.cu`.
+- Completed the kernel orchestration logic in `cumsum_host.cu`.
+- Verified correctness using the provided test cases.
+- Benchmarked the implementation to evaluate performance.
+
+Challenges encountered:
+- Understanding warp-level operations and their usage in inclusive scans.
+- Debugging kernel launch configurations to ensure correctness.
+- Optimizing performance to meet the benchmark requirements.
+
+Solutions:
+- Referred to NVIDIA's documentation and online resources for warp-level programming.
+- Used smaller test cases to debug and verify intermediate results.
+- Iteratively tuned grid and block dimensions for better performance.
 
 feedback:
+
+- The assignment was challenging but rewarding. It provided a good balance between theoretical concepts and practical implementation.
+- The most time-consuming part was debugging and optimizing the kernel for performance.
+- The instructions were clear, but additional examples of warp-level programming would be helpful.
+- The notebook format was helpful in understanding the assignment structure and requirements.
+- Overall, the assignment was a great learning experience, and I appreciate the effort put into designing it.
 

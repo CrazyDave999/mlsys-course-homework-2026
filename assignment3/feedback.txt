@@ -1,11 +1,19 @@
-Your feedback for this assignment in English (if any).
-Possible choices can be:
+Difficulty:
+- Medium to hard. The coding amount is reasonable, but correctness depends on understanding communication semantics and tensor partitioning details.
 
-- How difficult do you think this assignment is?
-- How much time does the assignment take? Which task takes the most time?
-- Which part of the assignment do you feel hard to understand?
-- And any other things you would like to share.
+Time and effort:
+- Most of the time is spent on parts 3-6 (forward/backward communication for naive and Megatron-style tensor parallel).
+- Part 2 (get_info and group construction) is also important because mistakes there affect all later parts.
 
-Your feedback will be very useful in helping us improve the assignment quality
-for next years.
+Hard-to-understand parts:
+- How tensor layout interacts with MPI collective buffer layout in 2D cases.
+- Why Megatron-style partitioning can simplify some communication paths in backward.
+
+Suggestions:
+- Add one extra worked example for 2D Reduce_scatter buffer arrangement.
+- Add a short table that summarizes communication needed for each layer and each parallel style.
+- Provide a note for common local environment setup issues for mpi4py/mpirun.
+
+Overall:
+- Very educational assignment that gives practical understanding of distributed training communication.
 

@@ -1,11 +1,23 @@
-Your learning journal for this assignment in English (if any).
+This assignment helped me understand communication patterns in distributed training.
 
-Please submit a brief journal about your experience with this assignment.  
-Include your reflections in a file named `journal.txt` and submit it with your code.
+Key lessons and skills learned:
+- Mapping global rank to model-parallel index and data-parallel index is foundational for all later communication logic.
+- Different tensor-parallel layouts lead to different communication needs:
+	- Naive tensor parallel needs gather/scatter style communication around FC2.
+	- Megatron-style tensor parallel can avoid some communication paths and only needs reduction in specific places.
+- MPI collective semantics (Allgather, Allreduce, Reduce_scatter, Split) and memory layout handling are important for correctness.
 
-- What are the key lessons or skills you learned from this assignment?
-- What specific tasks did you complete? 
-- What difficulties did you encounter? How did you solve them?
+Tasks completed:
+- Implemented dataset splitting for data parallel preprocessing.
+- Implemented get_info to construct MP/DP indices, MP/DP communicators, and per-layer partition dimensions.
+- Implemented all required forward communication functions for naive and Megatron-style tensor parallel.
+- Implemented all required backward communication functions for naive and Megatron-style tensor parallel.
+- Implemented data-parallel gradient aggregation for weight and bias.
+- Ran and passed all provided tests (single-process and MPI tests).
 
-This journal is required but not graded. 
+Difficulties encountered and solutions:
+- The hardest part was handling 2D tensor layout correctly during collective communication, especially for Reduce_scatter.
+	I solved it by explicitly splitting/concatenating along feature dimensions before/after collectives.
+- Environment setup was another issue because MPI launcher and pinned mpi4py version were not directly available.
+	I solved it by creating a uv environment and using a Python/MPI combination that supports mpiexec for running tests.
 
